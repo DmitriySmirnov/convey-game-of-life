@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+    </head>
+    <body>
+        <div >
+            <canvas id="my-canvas" style=" border-width: 1px; border-color: red; border-style: solid;"></canvas>
+        </div>
+        <div>
+            <button id="next-get-button" title="NEXT GEN" >NEXT GEN</button>
+            
+            <button id="randomize-button"  >RND</button>
+            <button id="clear-button"  >CLEAR</button>
+        </div>
+        <div>
+            <button id="start-stop-button">START</button>
+            <label for="speed">SPEED</label>
+            <input type="range" id="speed" name="speed" min="1" max="10" value="1">
+            
+        </div>
+        <div>
+            This is a <a target="_blank" href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">game of life</a>
+        </div>
+
+    
+
+        <script src="./live.js" ></script>
+        <script>
+            var state = 'STOP';
+            var canvas = document.querySelector('#my-canvas');
+            var width = 200;
+            var height = 200;
+            var pixelSize = 3;
+            canvas.width = width*pixelSize;
+            canvas.height = height*pixelSize;
+
+            function drawOnCanvas(evt) {
+                var x = evt.clientX - canvas.offsetLeft;
+                var y = evt.clientY - canvas.offsetTop;
+        
+                live.invertCell(x/pixelSize,y/pixelSize);
+                drawBoard(live)
+            }
+            canvas.onclick = drawOnCanvas;
+            canvas.onmousedown = () => {
+                canvas.addEventListener("mousemove", drawOnCanvas);
+            }
+            canvas.onmouseup = () => {
+                canvas.removeEventListener("mousemove", drawOnCanvas);
+            }
+            
+            
+            var context = canvas.getContext('2d');
+            function drawBoard(board) {
+
+                context.beginPath();
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, board.height*pixelSize, board.width*pixelSize);
+                context.fill();
+                for(var i=0; i<board.height; i++) {
+                    for(var j=0; j<board.width; j++) {
+                        if(board.getCell(i,j)) {
+                            context.fillStyle = '#000000';
+                            context.fillRect(i*pixelSize, j*pixelSize, pixelSize, pixelSize);
+                            
+                        }
+                    }
+                }
+                context.fill();
+            }
+
+            var live = new LiveBoard(width,height);
+            
+            live.clear();
+            live.nextGen();
+            drawBoard(live);
+
+            function onTimer() {
+                live.nextGen();
+                drawBoard(live);
+            }
+
+            var btn = document.querySelector('#next-get-button');
+            btn.onclick = () =>{
+                live.nextGen();
+                drawBoard(live);
+            }
+
+            var rndBtn = document.querySelector('#randomize-button');
+            rndBtn.onclick = () => {
+                live.randomize();
+                drawBoard(live);
+            }
+
+            var clrBtn = document.querySelector('#clear-button');
+            clrBtn.onclick = () => {
+                live.clear();
+                drawBoard(live);
+            }
+
+            var startStopButton = document.querySelector('#start-stop-button');
+            var intervalID = 0;
+
+            function restartTimer() {
+                startStopButton.innerHTML = state;
+                if(state == 'STOP') {
+                    state = 'START';
+                    var speed = document.getElementById("speed").value;
+                    intervalID = setInterval(onTimer, 500/speed);
+                } else {
+                    state = 'STOP';
+                    clearInterval(intervalID);
+                }
+            }
+            startStopButton.onclick = restartTimer;
+            document.getElementById("speed").oninput = () => {
+                if(state == 'START') { 
+                    restartTimer()
+                    restartTimer()
+                }
+            }
+
+        </script>
+
+        
+    </body>
+</html>
