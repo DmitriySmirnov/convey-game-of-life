@@ -1,31 +1,53 @@
 <!DOCTYPE html>
 <html>
     <head>
-
+        <meta charset="utf-8"/>
     </head>
     <body>
-        <div >
-            <canvas id="my-canvas" style=" border-width: 1px; border-color: red; border-style: solid;"></canvas>
+        <div id="board" style="float: left; width: 600px; padding-right: 25px; " >
+            <canvas id="my-canvas" style=" border-width: 1px; border-color: red; border-style: solid; "></canvas>
+
+            <div id="gen-indicator"></div>
+            <div> 
+               
+
+            </div>
         </div>
-        <div>
-            <button id="next-get-button" title="NEXT GEN" >NEXT GEN</button>
+        <div id="library" >
+            <h1>Library</h1>
+
             
-            <button id="randomize-button"  >RND</button>
-            <button id="clear-button"  >CLEAR</button>
         </div>
-        <div>
-            <button id="start-stop-button">START</button>
-            <label for="speed">SPEED</label>
-            <input type="range" id="speed" name="speed" min="1" max="10" value="1">
-            
+        
+        <div id="controls" style=" clear: both;" >
+            <div>
+                <button id="next-get-button" title="NEXT GEN" >NEXT GEN</button>
+                
+                <button id="randomize-button"  >RND</button>
+                <button id="clear-button"  >CLEAR</button>
+                <button id="start-stop-button">START</button>
+            </div>
+            <div>
+                
+                <label for="speed">SPEED</label>
+                <input type="range" id="speed" name="speed" min="1" max="10" value="1">
+                
+            </div>
+            <div>
+                This is a <a target="_blank" href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">game of life</a>
+            </div>
+            <div>
+                <h2>Hints</h2>
+                <p>You can draw on the board with a mouse. Click inverts the pixel state.</p>
+                <p>Board boundaries are connected left to right and top to bottom. It means when a flier crosses left boundary it appears on the right and visa versa. In fact the board iss not a plane but a <a href="https://en.wikipedia.org/wiki/Torus">torus</a>.</p>
+            </div>
         </div>
-        <div>
-            This is a <a target="_blank" href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">game of life</a>
-        </div>
+      
 
     
 
         <script src="./live.js" ></script>
+        <script src="./shapes.js" ></script>
         <script>
             var state = 'STOP';
             var canvas = document.querySelector('#my-canvas');
@@ -35,14 +57,58 @@
             canvas.width = width*pixelSize;
             canvas.height = height*pixelSize;
 
+            function addLibraryItem(code) {
+                console.log("add library element " + code);
+                var libraryContainer = document.getElementById("library")
+
+                var itemContainer = document.createElement("div")
+                itemContainer.setAttribute("style", "display: inline-block; border-style: solid; border-width:1px; padding: 5px; margin: 5px; vertical-align: top;")
+                var label = document.createElement("label")
+                label.setAttribute("for", code);
+                label.innerHTML = code;
+                var newElement = document.createElement("img");
+                newElement.setAttribute("src", createShapeDataUrl(shapes[code], 3));
+                newElement.setAttribute("id", code);
+                newElement.setAttribute("style", "cursor: grab;");
+                newElement.ondragstart = onDrag;
+                itemContainer.appendChild(label);
+                itemContainer.appendChild(document.createElement("br"));
+                itemContainer.appendChild(newElement);
+                libraryContainer.appendChild(itemContainer);
+            }
+
+            for (const key in shapes) {
+                if (Object.hasOwnProperty.call(shapes, key)) {
+                    addLibraryItem(key)
+                }
+            }
+
             function drawOnCanvas(evt) {
                 var x = evt.clientX - canvas.offsetLeft;
                 var y = evt.clientY - canvas.offsetTop;
         
-                live.invertCell(x/pixelSize,y/pixelSize);
+                live.invertCell(y/pixelSize,x/pixelSize);
+                drawBoard(live)
+            }
+            function onDrag(ev) {
+                ev.dataTransfer.setData("shape", ev.target.id);
+                ev.dataTransfer.setData("offset-x", ev.clientX - ev.target.offsetLeft);
+                ev.dataTransfer.setData("offset-y", ev.clientY - ev.target.offsetTop);
+       
+            }
+            function onShapeDrop(evt) {
+                evt.preventDefault();
+                var shape = evt.dataTransfer.getData("shape");
+
+                var x = evt.clientX - canvas.offsetLeft - evt.dataTransfer.getData("offset-x");
+                var y = evt.clientY - canvas.offsetTop - evt.dataTransfer.getData("offset-y");
+          
+                live.putArray(x/pixelSize,y/pixelSize, shapes[shape]);
                 drawBoard(live)
             }
             canvas.onclick = drawOnCanvas;
+            canvas.ondrop = onShapeDrop;
+            canvas.ondragover = (ev) => { ev.preventDefault(); }
             canvas.onmousedown = () => {
                 canvas.addEventListener("mousemove", drawOnCanvas);
             }
@@ -50,7 +116,7 @@
                 canvas.removeEventListener("mousemove", drawOnCanvas);
             }
             
-            
+            var genIndicator = document.getElementById("gen-indicator");
             var context = canvas.getContext('2d');
             function drawBoard(board) {
 
@@ -60,14 +126,15 @@
                 context.fill();
                 for(var i=0; i<board.height; i++) {
                     for(var j=0; j<board.width; j++) {
-                        if(board.getCell(i,j)) {
+                        if(board.getCell(i, j)) {
                             context.fillStyle = '#000000';
-                            context.fillRect(i*pixelSize, j*pixelSize, pixelSize, pixelSize);
+                            context.fillRect(j*pixelSize, i*pixelSize, pixelSize, pixelSize);
                             
                         }
                     }
                 }
                 context.fill();
+                genIndicator.innerHTML = 'GEN #' + board.genNumber;
             }
 
             var live = new LiveBoard(width,height);

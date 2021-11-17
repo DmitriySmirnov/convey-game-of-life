@@ -16,6 +16,7 @@ class LiveBoard {
     }
 
     randomize() {
+        this.genNumber = 0;
         for(var i=0; i<this.height; i++) {
             for(var j=0; j<this.width; j++) {
                 this.genX[i][j] = (Math.random() > 0.5) ? 1 : 0;
@@ -23,6 +24,7 @@ class LiveBoard {
         }
     }
     clear() {
+        this.genNumber = 0;
         for(var i=0; i<this.height; i++) {
             for(var j=0; j<this.width; j++) {
                 this.genX[i][j] = 0;
@@ -76,4 +78,15 @@ class LiveBoard {
         this.genY = tmp;
         this.genNumber++;
     }
+
+    putArray(x, y, shape) {
+        x=Math.floor(x)
+        y=Math.floor(y)
+        for(var i=0; i<shape.length; i++) {
+            for(var j=0; j<shape[0].length; j++) {
+                this.genX[(y+i)%this.height][(x+j)%this.width] = shape[i][j];
+            }
+        }
+    }
 }
+
